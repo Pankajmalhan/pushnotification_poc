@@ -23,8 +23,74 @@ import {
   DebugInstructions,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import { useEffect } from 'react';
+import firebase from 'react-native-firebase';
 
 const App: () => React$Node = () => {
+
+  let onNotificationHandler;
+  useEffect(() => {
+    firebase.auth()
+      .signInAnonymously()
+      .then(credential => {
+        if (credential) {
+          console.log(credential.user.toJSON())
+        }
+      });
+    firebase.messaging().getToken()
+      .then(fcmToken => {
+        if (fcmToken) {
+          console.log({fcmToken})
+        } else {
+          // user doesn't have a device token yet
+        }
+      });
+
+    (async function () {
+      const notificationOpen = await firebase.notifications().getInitialNotification();
+      if (notificationOpen) {
+        // App was opened by a notification
+        // Get the action triggered by the notification being opened
+        const action = notificationOpen.action;
+        // Get information about the notification that was opened
+        const notification = notificationOpen.notification;
+        console.log({ notificationOpen })
+      }
+    })()
+    firebase.messaging().hasPermission()
+      .then(enabled => {
+        if (enabled) {
+          console.log("yes")
+        } else {
+          console.log("no")
+        }
+      });
+
+    firebase.messaging().onMessage((message) => {
+      alert(message)
+    });
+
+    firebase.notifications().onNotificationDisplayed((notification) => {
+      console.log("pa")
+      alert(100)
+      // Process your notification as required
+      // ANDROID: Remote notifications do not contain the channel ID. You will have to specify this manually if you'd like to re-display the notification.
+    });
+    onNotificationHandler = firebase.notifications().onNotification((notification) => {
+      // Process your notification as required
+      console.log("da");
+      notification.android.setChannelId("testqw")
+      firebase.notifications().displayNotification(notification)
+    });
+    firebase.notifications().onNotificationOpened((notification) => {
+      // Process your notification as required
+      console.log("opend", notification)
+    });
+
+    return () => {
+      onNotificationHandler();
+    }
+  }, [])
   return (
     <>
       <StatusBar barStyle="dark-content" />
