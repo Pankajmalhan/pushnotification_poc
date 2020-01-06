@@ -13,6 +13,8 @@ import {
   ScrollView,
   View,
   Text,
+  Button,
+  TextInput,
   StatusBar,
 } from 'react-native';
 
@@ -23,13 +25,31 @@ import {
   DebugInstructions,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import firebase from 'react-native-firebase';
 
-const App: () => React$Node = () => {
+var config = {
+  apiKey: "AIzaSyB1J_RksrTiLuPAf-DVpRnld2UqDFCYO9Y",
+  authDomain: "notificationpoc-8c82a.firebaseapp.com",
+  databaseURL: "https://notificationpoc-8c82a.firebaseio.com"
+};
+firebase.initializeApp(config);
 
+// Get a reference to the database service
+var database = firebase.database();
+
+
+const App: () => React$Node = () => {
+  const [value, setValue] = useState('');
+  const [value2, setValue2] = useState('');
   let onNotificationHandler;
   useEffect(() => {
+
+    var starCountRef = database.ref('user1');
+    starCountRef.on('value', function (snapshot) {
+      setValue(snapshot.val())
+    });
+
     firebase.auth()
       .signInAnonymously()
       .then(credential => {
@@ -40,7 +60,7 @@ const App: () => React$Node = () => {
     firebase.messaging().getToken()
       .then(fcmToken => {
         if (fcmToken) {
-          console.log({fcmToken})
+          console.log({ fcmToken })
         } else {
           // user doesn't have a device token yet
         }
@@ -67,18 +87,17 @@ const App: () => React$Node = () => {
       });
 
     firebase.messaging().onMessage((message) => {
-      alert(message)
+      // alert(message)
     });
 
     firebase.notifications().onNotificationDisplayed((notification) => {
       console.log("pa")
-      alert(100)
       // Process your notification as required
       // ANDROID: Remote notifications do not contain the channel ID. You will have to specify this manually if you'd like to re-display the notification.
     });
     onNotificationHandler = firebase.notifications().onNotification((notification) => {
       // Process your notification as required
-      console.log("da");
+      console.log("da", notification);
       notification.android.setChannelId("testqw")
       firebase.notifications().displayNotification(notification)
     });
@@ -91,50 +110,17 @@ const App: () => React$Node = () => {
       onNotificationHandler();
     }
   }, [])
+
+  const updateFireBase=()=>{
+    var starCountRef = database.ref('user1');
+    starCountRef.set(value2)
+  }
   return (
-    <>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </>
+    <View>
+      <Text>{value}</Text>
+      <TextInput onChangeText={setValue2}  />
+      <Button title="Update"  onPress={updateFireBase}/>
+    </View>
   );
 };
 
